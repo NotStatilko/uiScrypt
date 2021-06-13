@@ -68,6 +68,7 @@ class uiScrypt(QtWidgets.QMainWindow):
             n = int(self.ui.lineEdit_6.text())
             r = int(self.ui.lineEdit_5.text())
             p = int(self.ui.lineEdit.text())
+            self.all_is_valid = True
         except:
             self.all_is_valid = False
             self.ui.label_12.show()
@@ -87,6 +88,7 @@ class uiScrypt(QtWidgets.QMainWindow):
             except:
                 self.erase_to_start()
                 self.ui.label_12.show()
+                self.all_is_valid = False
             else:
                 self.ui.label_7.hide()
                 self.ui.label_8.show()
