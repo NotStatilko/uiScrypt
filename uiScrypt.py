@@ -1,9 +1,18 @@
 from PyQt5 import QtWidgets, QtCore
 from ui_Scrypt import Ui_mainWindow
-from hashlib import scrypt
+
+from hashlib import scrypt as scrypt_
 from sys import exit as sys_exit
 from base64 import urlsafe_b64encode
+from secrets import token_bytes #will be used for animation
 
+from multiprocessing import Process, Queue
+
+def scrypt(queue: Queue, **kwargs) -> None:
+    '''Will put resulted key to the queue.'''
+    s = scrypt_(**kwargs)
+    queue.put(s)
+    
 class uiScrypt(QtWidgets.QMainWindow):
     def __init__(self):
         super(uiScrypt, self).__init__()
@@ -18,7 +27,9 @@ class uiScrypt(QtWidgets.QMainWindow):
         }
         for i in self.ledits:
             i.hide()
-
+        
+        self.ui.lineEdit_2.setFocus()
+        
         self.ui.pushButton_2.hide() #generate another
         self.ui.label_7.hide() #in process label
 
@@ -33,7 +44,7 @@ class uiScrypt(QtWidgets.QMainWindow):
 
         self.ui.radioButton.clicked.connect(self.show_text)
         self.ui.radioButton_2.clicked.connect(self.show_text)
-
+                
         self.ui.pushButton.setDefault(True)
         self.ui.pushButton_2.setDefault(True)
 
@@ -61,6 +72,8 @@ class uiScrypt(QtWidgets.QMainWindow):
 
     def make_password_clicked(self):
         self.hide_all_empty_errors()
+        self.all_is_valid = True
+        
         for k,v in self.ledits.items():
             if not v.text():
                 k.show(); self.all_is_valid = False
@@ -68,7 +81,6 @@ class uiScrypt(QtWidgets.QMainWindow):
             n = int(self.ui.lineEdit_6.text())
             r = int(self.ui.lineEdit_5.text())
             p = int(self.ui.lineEdit.text())
-            self.all_is_valid = True
         except:
             self.all_is_valid = False
             self.ui.label_12.show()
@@ -78,23 +90,37 @@ class uiScrypt(QtWidgets.QMainWindow):
             self.ui.label_5.hide()
             self.ui.label_7.show()
             self.ui.lineEdit_4.show()
+            self.ui.lineEdit_4.setFocus()
             try:
-                key = scrypt(
-                    password = self.ui.lineEdit_2.text().encode(),
-                    salt = self.ui.lineEdit_3.text().encode(),
-                    n = n, r = r, p = p, dklen=32,
-                    maxmem = 128 * r * (n + p + 2)
-                )
+                queue = Queue()
+                
+                p = Process(
+                    target=scrypt, args=(queue,), 
+                    kwargs={
+                        'password': self.ui.lineEdit_2.text().encode(),
+                        'salt': self.ui.lineEdit_3.text().encode(),
+                        'n': n, 'r': r, 'p': p, 'dklen': 32,
+                        'maxmem': (128 * r * (n + p + 2))
+                    }
+                ); p.start()
+                while not queue.qsize():
+                    QtCore.QCoreApplication.processEvents()
+                    self.ui.lineEdit_4.setText(
+                        urlsafe_b64encode(token_bytes()).decode()
+                    )
+                else:
+                    key = queue.get(); p.join()
+                    
+                    self.ui.label_7.hide()
+                    self.ui.label_8.show()
+                    self.ui.lineEdit_4.setText(urlsafe_b64encode(key).decode())
+                    self.ui.lineEdit_4.selectAll()
+                    self.ui.lineEdit_4.setFocus()
+                    self.ui.lineEdit_4.show()
+                    self.ui.pushButton_2.show()
             except:
                 self.erase_to_start()
                 self.ui.label_12.show()
-                self.all_is_valid = False
-            else:
-                self.ui.label_7.hide()
-                self.ui.label_8.show()
-                self.ui.lineEdit_4.setText(urlsafe_b64encode(key).decode())
-                self.ui.lineEdit_4.show()
-                self.ui.pushButton_2.show()
 
     def hide_with_edit(self):
         self.hide_all_empty_errors()
@@ -107,6 +133,7 @@ class uiScrypt(QtWidgets.QMainWindow):
         self.ui.lineEdit_4.hide()
         self.ui.label_5.show()
         self.ui.pushButton.show()
+        self.ui.lineEdit_2.setFocus()
 
     def closeEvent(self,event):
         self.close(); sys_exit()
