@@ -4,9 +4,11 @@ from ui_Scrypt import Ui_mainWindow
 from hashlib import scrypt as scrypt_
 from sys import exit as sys_exit
 from base64 import urlsafe_b64encode
-from secrets import token_bytes #will be used for animation
 
 from multiprocessing import Process, Queue
+from random import randrange # We will use it with prbg for animation.
+
+prbg = lambda x: bytes([randrange(255) for _ in range(x)])
 
 def scrypt(queue: Queue, **kwargs) -> None:
     '''Will put resulted key to the queue.'''
@@ -106,7 +108,7 @@ class uiScrypt(QtWidgets.QMainWindow):
                 while not queue.qsize():
                     QtCore.QCoreApplication.processEvents()
                     self.ui.lineEdit_4.setText(
-                        urlsafe_b64encode(token_bytes()).decode()
+                        urlsafe_b64encode(prbg(32)).decode()
                     )
                 else:
                     key = queue.get(); p.join()
