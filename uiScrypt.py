@@ -2,11 +2,13 @@ from PyQt5 import QtWidgets, QtCore
 from ui_Scrypt import Ui_mainWindow
 
 from hashlib import scrypt as scrypt_
-from sys import exit as sys_exit
+from sys import exit as sys_exit, argv as sys_argv
+from os import cpu_count
 from base64 import urlsafe_b64encode
 
 from multiprocessing import Process, Queue
 from random import randrange # We will use it with prbg for animation.
+
 
 prbg = lambda x: bytes([randrange(255) for _ in range(x)])
 
@@ -20,6 +22,11 @@ class uiScrypt(QtWidgets.QMainWindow):
         super(uiScrypt, self).__init__()
         self.ui = Ui_mainWindow()
         self.ui.setupUi(self)
+        
+        if len(sys_argv[1:]) >= 3:
+            self.ui.lineEdit_6.setText(sys_argv[1]) # N
+            self.ui.lineEdit_5.setText(sys_argv[2]) # R
+            self.ui.lineEdit.setText(sys_argv[3])   # P
 
         self.ui.label_12.hide() #invalid config
         self.ledits = {
@@ -95,7 +102,6 @@ class uiScrypt(QtWidgets.QMainWindow):
             self.ui.lineEdit_4.setFocus()
             try:
                 queue = Queue()
-                
                 p = Process(
                     target=scrypt, args=(queue,), 
                     kwargs={
@@ -105,11 +111,15 @@ class uiScrypt(QtWidgets.QMainWindow):
                         'maxmem': (128 * r * (n + p + 2))
                     }
                 ); p.start()
+                if cpu_count() < 2:
+                    self.ui.lineEdit_4.setText('Please wait...')
                 while not queue.qsize():
                     QtCore.QCoreApplication.processEvents()
-                    self.ui.lineEdit_4.setText(
-                        urlsafe_b64encode(prbg(32)).decode()
-                    )
+                    assert not p.exitcode # Will False if invalid Scrypt configuration
+                    if cpu_count() > 1:
+                        self.ui.lineEdit_4.setText(
+                            urlsafe_b64encode(prbg(32)).decode()
+                        )
                 else:
                     key = queue.get(); p.join()
                     
