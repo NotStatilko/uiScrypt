@@ -1,8 +1,12 @@
-from PyQt5 import QtWidgets, QtCore
-from ui_Scrypt import Ui_mainWindow
+from qrcode import QRCode
 
-from hashlib import scrypt as scrypt_
+from ui_Scrypt import Ui_mainWindow
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QPixmap
+
+from hashlib import scrypt as scrypt_, sha256
 from sys import exit as sys_exit, argv as sys_argv
+
 from os import cpu_count
 from base64 import urlsafe_b64encode
 
@@ -10,6 +14,10 @@ from multiprocessing import Process, Queue
 from random import randrange # We will use it with prbg for animation.
 
 
+# Will be used for generating passwords fingerprints in App Title
+SALT = bytes.fromhex('3e430bceacb85e6cfca2bf10d18c8f82')
+
+# Pseudo random bytes generator
 prbg = lambda x: bytes([randrange(255) for _ in range(x)])
 
 def scrypt(queue: Queue, **kwargs) -> None:
@@ -27,8 +35,9 @@ class uiScrypt(QtWidgets.QMainWindow):
             self.ui.lineEdit_6.setText(sys_argv[1]) # N
             self.ui.lineEdit_5.setText(sys_argv[2]) # R
             self.ui.lineEdit.setText(sys_argv[3])   # P
-
+        
         self.ui.label_12.hide() #invalid config
+
         self.ledits = {
             self.ui.label_12: self.ui.lineEdit,
             self.ui.label_10: self.ui.lineEdit_2,
@@ -48,14 +57,22 @@ class uiScrypt(QtWidgets.QMainWindow):
         #make password button is pushButton
         #generate password is label_5
 
+        self.ui.pushButton_3.hide() # QR Code view
+        self.ui.pushButton_4.hide() # Close QR Code view
+        self.ui.qr_mask_label.hide()
+        
         self.ui.pushButton.clicked.connect(self.make_password_clicked)
         self.ui.pushButton_2.clicked.connect(self.erase_to_start)
+        self.ui.pushButton_3.clicked.connect(self.as_qr_clicked)
+        self.ui.pushButton_4.clicked.connect(self.return_back_from_qr)
 
         self.ui.radioButton.clicked.connect(self.show_text)
         self.ui.radioButton_2.clicked.connect(self.show_text)
                 
         self.ui.pushButton.setDefault(True)
         self.ui.pushButton_2.setDefault(True)
+        self.ui.pushButton_3.setDefault(True)
+        self.ui.pushButton_4.setDefault(True)
 
         for i in self.ledits.values():
             i.textChanged.connect(self.hide_with_edit)
@@ -78,6 +95,67 @@ class uiScrypt(QtWidgets.QMainWindow):
 
     def hide_all_empty_errors(self):
         for i in self.ledits: i.hide()
+    
+    def as_qr_clicked(self):
+        qr_code = QRCode()
+        qr_code.add_data(self.ui.lineEdit_4.text())
+
+        pil_image = qr_code.make_image().get_image()
+        pil_image = pil_image.resize((256, 256))
+
+        self.ui.label_2.hide()
+        self.ui.label_3.hide()
+        self.ui.label_4.hide()
+        self.ui.label_5.hide()
+        self.ui.label_7.hide()
+        self.ui.label_8.hide()
+        self.ui.label_9.hide()
+        self.ui.label_10.hide()
+        self.ui.label_12.hide()
+
+        self.ui.lineEdit.hide()
+        self.ui.lineEdit_2.hide()
+        self.ui.lineEdit_3.hide()
+        self.ui.lineEdit_4.hide()
+        self.ui.lineEdit_5.hide()
+        self.ui.lineEdit_6.hide()
+
+        self.ui.pushButton.hide()
+        self.ui.pushButton_2.hide()
+        self.ui.pushButton_3.hide()
+
+        self.ui.radioButton.hide()
+        self.ui.radioButton_2.hide()
+
+        self.ui.qr_mask_label.setPixmap(pil_image.toqpixmap())
+        self.ui.qr_mask_label.show()
+
+        self.ui.pushButton_4.show()
+        self.ui.pushButton_4.setFocus()
+
+    def return_back_from_qr(self):
+        self.ui.qr_mask_label.hide()
+        self.ui.pushButton_4.hide()
+
+        self.ui.label_2.show()
+        self.ui.label_3.show()
+        self.ui.label_4.show()
+        self.ui.label_8.show()
+
+        self.ui.lineEdit.show()
+        self.ui.lineEdit_2.show()
+        self.ui.lineEdit_3.show()
+        self.ui.lineEdit_4.show()
+        self.ui.lineEdit_5.show()
+        self.ui.lineEdit_6.show()
+
+        self.ui.pushButton_2.show()
+        self.ui.pushButton_3.show()
+
+        self.ui.radioButton.show()
+        self.ui.radioButton_2.show()
+
+        self.ui.pushButton_3.setFocus()
 
     def make_password_clicked(self):
         self.hide_all_empty_errors()
@@ -122,7 +200,13 @@ class uiScrypt(QtWidgets.QMainWindow):
                         )
                 else:
                     key = queue.get(); p.join()
-                    
+                    fingerprint = sha256(key + SALT).digest()[:6].hex()
+
+                    _translate = QtCore.QCoreApplication.translate
+
+                    self.setWindowTitle(_translate(
+                        "mainWindow", f"uiScrypt [{fingerprint.upper()}]")
+                    )
                     self.ui.label_7.hide()
                     self.ui.label_8.show()
                     self.ui.lineEdit_4.setText(urlsafe_b64encode(key).decode())
@@ -130,6 +214,7 @@ class uiScrypt(QtWidgets.QMainWindow):
                     self.ui.lineEdit_4.setFocus()
                     self.ui.lineEdit_4.show()
                     self.ui.pushButton_2.show()
+                    self.ui.pushButton_3.show()
             except:
                 self.erase_to_start()
                 self.ui.label_12.show()
@@ -138,6 +223,7 @@ class uiScrypt(QtWidgets.QMainWindow):
         self.hide_all_empty_errors()
 
     def erase_to_start(self):
+        self.ui.pushButton_3.hide()
         self.ui.label_7.hide()
         self.ui.label_12.hide()
         self.ui.pushButton_2.hide()
@@ -146,6 +232,9 @@ class uiScrypt(QtWidgets.QMainWindow):
         self.ui.label_5.show()
         self.ui.pushButton.show()
         self.ui.lineEdit_2.setFocus()
+
+        _translate = QtCore.QCoreApplication.translate
+        self.setWindowTitle(_translate("mainWindow", "uiScrypt [000000000000]"))
 
     def closeEvent(self,event):
         self.close(); sys_exit()
