@@ -44,6 +44,11 @@
       <height>25</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>DejaVu Sans</family>
+     </font>
+    </property>
     <property name="styleSheet">
      <string notr="true">selection-background-color: rgb(24, 24, 24);</string>
     </property>
@@ -65,6 +70,11 @@
       <width>291</width>
       <height>25</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>DejaVu Sans</family>
+     </font>
     </property>
     <property name="tabletTracking">
      <bool>false</bool>
@@ -93,6 +103,11 @@
       <width>291</width>
       <height>25</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>DejaVu Sans</family>
+     </font>
     </property>
     <property name="cursor">
      <cursorShape>IBeamCursor</cursorShape>
@@ -239,6 +254,11 @@ background-color: rgb(17, 16, 16);</string>
       <height>25</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>DejaVu Sans</family>
+     </font>
+    </property>
     <property name="styleSheet">
      <string notr="true">selection-background-color: rgb(24, 24, 24);</string>
     </property>
@@ -331,6 +351,11 @@ selection-background-color: rgb(24, 24, 24);</string>
       <height>25</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>DejaVu Sans</family>
+     </font>
+    </property>
     <property name="styleSheet">
      <string notr="true">selection-background-color: rgb(24, 24, 24);</string>
     </property>
@@ -352,6 +377,11 @@ selection-background-color: rgb(24, 24, 24);</string>
       <width>91</width>
       <height>25</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>DejaVu Sans</family>
+     </font>
     </property>
     <property name="accessibleDescription">
      <string/>
