@@ -11,7 +11,11 @@ setup(
     url              =  'https://github.com/NotStatilko/uiScrypt',
     download_url     =  'https://github.com/NotStatilko/uiScrypt/archive/refs/tags/v2.0.tar.gz',
 
-    install_requires = ['pyqt5==5.15.10', 'qrcode==6.1'],
+    install_requires = [
+        'pyqt5==5.15.9',
+        'qrcode==6.1',
+        'pillow==9.5.0'
+    ],
     long_description_content_type='text/markdown',
 
     package_data = {
