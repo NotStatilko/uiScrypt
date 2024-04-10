@@ -8,7 +8,12 @@ from PyQt5.QtGui import QPixmap, QFontDatabase
 
 from hashlib import scrypt as scrypt_, sha256
 from sys import exit as sys_exit, argv as sys_argv
+try:
+    from sys import _MEIPASS
+except ImportError:
+    _MEIPASS = None
 
+from pathlib import Path
 from os import cpu_count
 from base64 import urlsafe_b64encode
 
@@ -16,14 +21,14 @@ from multiprocessing import Process, Queue
 from random import randrange # We will use it with prbg for animation.
 
 
+ABSPATH: Path = Path(_MEIPASS) if _MEIPASS is not None \
+    else Path(__file__).parent
+
 # Will be used for generating passwords fingerprints in App Title
 SALT = bytes.fromhex('3e430bceacb85e6cfca2bf10d18c8f82')
 
 # Pseudo random bytes generator
 prbg = lambda x: bytes([randrange(255) for _ in range(x)])
-
-QFontDatabase.addApplicationFont("data/fonts/DejaVu Sans Book.ttf")
-QFontDatabase.addApplicationFont("data/fonts/Waree.ttf")
 
 
 def scrypt(queue: Queue, **kwargs) -> None:
@@ -37,27 +42,30 @@ class uiScrypt(QtWidgets.QMainWindow):
         self.ui = Ui_mainWindow()
         self.ui.setupUi(self)
 
+        QFontDatabase.addApplicationFont(str(ABSPATH / "data/fonts/DejaVu Sans Book.ttf"))
+        QFontDatabase.addApplicationFont(str(ABSPATH / "data/fonts/Waree.ttf"))
+
         if len(sys_argv[1:]) >= 3:
             self.ui.lineEdit_6.setText(sys_argv[1]) # N
             self.ui.lineEdit_5.setText(sys_argv[2]) # R
             self.ui.lineEdit.setText(sys_argv[3])   # P
 
         if len(sys_argv[1:]) >= 4:
-            assert dklen.isnumeric(), 'dklen must be integer'
-            dklen = int(sys_argv[4])
+            assert sys_argv[4].isnumeric(), 'self.dklen must be integer'
+            self.dklen = int(sys_argv[4])
         else:
-            dklen = 32
+            self.dklen = 32
 
         if len(sys_argv[1:]) >= 5:
             assert sys_argv[5] in ('hex', 'b64'), 'format must be either hex or b64'
 
             if sys_argv[5] == 'hex':
-                format_func = lambda b: b.hex()
+                self.format_func = lambda b: b.hex()
 
             elif sys_argv[5] == 'b64':
-                format_func = lambda b: urlsafe_b64encode(b).decode()
+                self.format_func = lambda b: urlsafe_b64encode(b).decode()
         else:
-            format_func = lambda b: urlsafe_b64encode(b).decode()
+            self.format_func = lambda b: urlsafe_b64encode(b).decode()
 
         self.ui.label_12.hide() #invalid config
 
@@ -203,23 +211,26 @@ class uiScrypt(QtWidgets.QMainWindow):
             self.ui.lineEdit_4.setFocus()
             try:
                 queue = Queue()
+
                 p = Process(
                     target=scrypt, args=(queue,),
                     kwargs={
                         'password': self.ui.lineEdit_2.text().encode(),
                         'salt': self.ui.lineEdit_3.text().encode(),
-                        'n': n, 'r': r, 'p': p, 'dklen': dklen,
+                        'n': n, 'r': r, 'p': p, 'dklen': self.dklen,
                         'maxmem': (128 * r * (n + p + 2))
                     }
                 ); p.start()
+
                 if cpu_count() < 2:
                     self.ui.lineEdit_4.setText('Please wait...')
+
                 while not queue.qsize():
                     QtCore.QCoreApplication.processEvents()
                     assert not p.exitcode # Will False if invalid Scrypt configuration
 
                     if cpu_count() > 1:
-                        self.ui.lineEdit_4.setText(format_func(prbg(32)))
+                        self.ui.lineEdit_4.setText(self.format_func(prbg(32)))
                 else:
                     key = queue.get(); p.join()
                     fingerprint = sha256(key + SALT).digest()[:6].hex()
@@ -231,13 +242,14 @@ class uiScrypt(QtWidgets.QMainWindow):
                     )
                     self.ui.label_7.hide()
                     self.ui.label_8.show()
-                    self.ui.lineEdit_4.setText(format_func(key))
+                    self.ui.lineEdit_4.setText(self.format_func(key))
                     self.ui.lineEdit_4.selectAll()
                     self.ui.lineEdit_4.setFocus()
                     self.ui.lineEdit_4.show()
                     self.ui.pushButton_2.show()
                     self.ui.pushButton_3.show()
-            except:
+            except Exception as e:
+                print(e)
                 self.erase_to_start()
                 self.ui.label_12.show()
 
