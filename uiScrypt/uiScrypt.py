@@ -1,31 +1,22 @@
 #!/usr/bin/env python3
 
-from qrcode import QRCode
-
-from .ui_Scrypt import Ui_mainWindow
-from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtGui import QPixmap, QFontDatabase
-
 from hashlib import scrypt as scrypt_, sha256
 from sys import exit as sys_exit, argv as sys_argv
-try:
-    from sys import _MEIPASS
-except ImportError:
-    _MEIPASS = None
 
-from pathlib import Path
 from os import cpu_count
 from base64 import urlsafe_b64encode
 
 from multiprocessing import Process, Queue
 from random import randrange # We will use it with prbg for animation.
 
+from qrcode import QRCode
 
-ABSPATH: Path = Path(_MEIPASS) if _MEIPASS is not None \
-    else Path(__file__).parent
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QPixmap, QFontDatabase
 
-# Will be used for generating passwords fingerprints in App Title
-SALT = bytes.fromhex('3e430bceacb85e6cfca2bf10d18c8f82')
+from . import ABSPATH, SALT, VERSION
+from .ui_Scrypt import Ui_mainWindow
+
 
 # Pseudo random bytes generator
 prbg = lambda x: bytes([randrange(255) for _ in range(x)])
@@ -238,7 +229,7 @@ class uiScrypt(QtWidgets.QMainWindow):
                     _translate = QtCore.QCoreApplication.translate
 
                     self.setWindowTitle(_translate(
-                        "mainWindow", f"uiScrypt [{fingerprint.upper()}]")
+                        "mainWindow", f"uiScrypt v{VERSION} [{fingerprint.upper()}]")
                     )
                     self.ui.label_7.hide()
                     self.ui.label_8.show()
@@ -268,7 +259,10 @@ class uiScrypt(QtWidgets.QMainWindow):
         self.ui.lineEdit_2.setFocus()
 
         _translate = QtCore.QCoreApplication.translate
-        self.setWindowTitle(_translate("mainWindow", "uiScrypt [000000000000]"))
+
+        self.setWindowTitle(_translate(
+            "mainWindow", f"uiScrypt v{VERSION} [000000000000]")
+        )
 
     def closeEvent(self,event):
         self.close(); sys_exit()
