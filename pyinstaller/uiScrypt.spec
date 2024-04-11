@@ -10,7 +10,7 @@ SCRIPT_LOGO = Path.cwd() / 'logo/logo.ico'
 
 a = Analysis(
     [str(MAIN_SCRIPT)],
-    pathex = [],
+    pathex = [str(Path.cwd().parent)],
     binaries = [],
     datas = [],
     hiddenimports = [],
