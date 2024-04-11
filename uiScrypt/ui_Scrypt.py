@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'uiScrypt.ui'
+# Form implementation generated from reading ui file 'ui_Scrypt.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.9
 #
@@ -193,7 +193,7 @@ class Ui_mainWindow(object):
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
-        mainWindow.setWindowTitle(_translate("mainWindow", "uiScrypt [000000000000]"))
+        mainWindow.setWindowTitle(_translate("mainWindow", "uiScrypt v2.0.1 [000000000000]"))
         self.lineEdit.setText(_translate("mainWindow", "1"))
         self.lineEdit.setPlaceholderText(_translate("mainWindow", "p (1)"))
         self.label.setText(_translate("mainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:20pt; font-weight:600; color:#2e3436;\">ui</span><span style=\" font-size:20pt; font-weight:600;\">Scrypt</span></p></body></html>"))
