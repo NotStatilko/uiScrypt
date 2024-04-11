@@ -42,7 +42,7 @@ class uiScrypt(QtWidgets.QMainWindow):
         self.ui = Ui_mainWindow()
         self.ui.setupUi(self)
 
-        QFontDatabase.addApplicationFont(str(ABSPATH / "data/fonts/DejaVu Sans Book.ttf"))
+        QFontDatabase.addApplicationFont(str(ABSPATH / "data/fonts/DejaVuSans.ttf"))
         QFontDatabase.addApplicationFont(str(ABSPATH / "data/fonts/Waree.ttf"))
 
         if len(sys_argv[1:]) >= 3:
